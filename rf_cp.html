@@ -12,15 +12,14 @@
             --border: rgba(255, 255, 255, 0.1);
         }
         
-        /* === 關鍵設定：讓內容自然撐開，但隱藏卷軸 === */
         html, body {
-            margin: 0; 
-            padding: 5px; 
+            margin: 0; padding: 5px; 
+            padding-bottom: 20px;
             font-family: 'Noto Sans TC', sans-serif; 
             background: transparent; 
             color: var(--text-main);
-            height: auto;       /* 允許自動長高 */
-            overflow: hidden;   /* 隱藏自己的卷軸，交給外部 */
+            height: auto;
+            overflow: hidden;
         }
         * { box-sizing: border-box; }
 
@@ -39,12 +38,47 @@
         }
         .grid-row { display: flex; gap: 20px; margin-bottom: 20px; }
         .grid-col { flex: 1; }
-        label { display: block; margin-bottom: 8px; color: #888; font-size: 0.9em; font-family: 'Rajdhani'; letter-spacing: 1px; }
-        select, input {
-            width: 100%; padding: 14px; background: #0b0c10; border: 1px solid #333;
-            color: #fff; border-radius: 6px; font-size: 1em; transition: 0.3s;
+        label {
+            display: block; margin-bottom: 8px; color: var(--accent-gold);
+            font-size: 0.85em; font-family: 'Rajdhani'; letter-spacing: 2px;
+            text-transform: uppercase; font-weight: 700;
         }
-        select:focus, input:focus { border-color: var(--accent-gold); outline: none; }
+        select, input {
+            width: 100%;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f26 100%);
+            border: 1px solid rgba(212, 167, 106, 0.3);
+            color: var(--text-main);
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        select:hover {
+            border-color: rgba(212, 167, 106, 0.6);
+            background: linear-gradient(135deg, #1a1f26 0%, #0f1419 100%);
+        }
+        select:focus, input:focus {
+            border-color: var(--accent-gold);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(212, 167, 106, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        input:hover {
+            border-color: rgba(212, 167, 106, 0.6);
+        }
+        select option {
+            background: #1a1f26;
+            color: var(--text-main);
+            padding: 10px;
+            font-weight: 500;
+        }
+        select option:checked {
+            background: linear-gradient(90deg, rgba(212, 167, 106, 0.3), rgba(212, 167, 106, 0.1));
+            color: var(--accent-gold);
+        }
         .action-btn { width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-gold { background: var(--accent-gold); color: #1a1815; font-size: 1.1em; }
         .btn-gold:hover { background: #f1c40f; }
@@ -52,7 +86,31 @@
             margin-top: 20px; padding: 20px; background: rgba(212, 167, 106, 0.1); border-radius: 8px;
             text-align: center; border: 1px solid var(--accent-gold); color: var(--accent-gold); font-weight: bold; font-size: 1.2em;
         }
-        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #333; }
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #333;
+            /* 自訂滾動條樣式 */
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-gold) #1a1a1a;
+        }
+        /* 表格容器滾動條樣式 */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 0 0 8px 8px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--accent-gold);
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #e5b87a;
+            box-shadow: 0 0 6px rgba(212, 167, 106, 0.4);
+        }
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
         th { background: #2c241b; color: var(--accent-gold); padding: 15px; text-align: left; }
         td { padding: 12px 15px; border-bottom: 1px solid #222; color: #ccc; font-family: monospace; }
@@ -61,32 +119,34 @@
     </style>
 </head>
 <body>
-    <div class="tech-card">
-        <div class="card-title">鑽石節點 CP 值分析</div>
-        <div class="grid-row">
-            <div class="grid-col"><label>強化等級</label><select id="rf-level"><option value="0-5">Lv 0-5</option><option value="6">Lv 6</option><option value="7">Lv 7</option><option value="8">Lv 8</option><option value="9">Lv 9</option><option value="10">Lv 10</option><option value="12">Lv 12</option></select></div>
-            <div class="grid-col"><label>裝備階級</label><select id="rf-tier"><option value="t1">T1 究極</option><option value="t2">T2 究極</option><option value="t3">T3 究極</option><option value="t4">T4 究極</option><option value="t5">T5 究極</option></select></div>
-            <div class="grid-col"><label>投入鑽石</label><input type="number" id="rf-diamonds" placeholder="輸入金額"></div>
+    <div id="content-wrapper">
+        <div class="tech-card">
+            <div class="card-title">鑽石節點 CP 值分析</div>
+            <div class="grid-row">
+                <div class="grid-col"><label>強化等級</label><select id="rf-level"><option value="0-5">Lv 0-5</option><option value="6">Lv 6</option><option value="7">Lv 7</option><option value="8">Lv 8</option><option value="9">Lv 9</option><option value="10">Lv 10</option><option value="12">Lv 12</option></select></div>
+                <div class="grid-col"><label>裝備階級</label><select id="rf-tier"><option value="t1">T1 究極</option><option value="t2">T2 究極</option><option value="t3">T3 究極</option><option value="t4">T4 究極</option><option value="t5">T5 究極</option></select></div>
+                <div class="grid-col"><label>投入鑽石</label><input type="number" id="rf-diamonds" placeholder="輸入金額"></div>
+            </div>
+            <button class="action-btn btn-gold" onclick="calcRF()">開始計算</button>
+            <div id="rf-result" class="result-box" style="display:none;"></div>
         </div>
-        <button class="action-btn btn-gold" onclick="calcRF()">開始計</button>
-        <div id="rf-result" class="result-box" style="display:none;"></div>
-    </div>
 
-    <div class="tech-card">
-        <h3 style="color:#888; font-size:1em; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">DATABASE: 節點消耗表</h3>
-        <div class="table-container">
-            <table>
-                <thead><tr><th width="20%">LEVEL</th><th>T1</th><th>T2</th><th>T3</th><th>T4</th><th>T5</th></tr></thead>
-                <tbody>
-                    <tr><td>Lv 0-5</td><td>50</td><td>125</td><td>200</td><td>300</td><td>400</td></tr>
-                    <tr><td>Lv 6</td><td>75</td><td>225</td><td>300</td><td>450</td><td>600</td></tr>
-                    <tr><td>Lv 7</td><td>75</td><td>225</td><td>300</td><td>450</td><td>600</td></tr>
-                    <tr><td>Lv 8</td><td>75</td><td>225</td><td>300</td><td>450</td><td>600</td></tr>
-                    <tr><td>Lv 9</td><td>100</td><td>300</td><td>400</td><td>600</td><td>800</td></tr>
-                    <tr><td>Lv 10</td><td>100</td><td>300</td><td>400</td><td>600</td><td>800</td></tr>
-                    <tr><td>Lv 12</td><td>150</td><td>375</td><td>600</td><td>900</td><td>1200</td></tr>
-                </tbody>
-            </table>
+        <div class="tech-card">
+            <h3 style="color:#888; font-size:1em; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">DATABASE: 節點消耗表</h3>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th width="20%">LEVEL</th><th>T1</th><th>T2</th><th>T3</th><th>T4</th><th>T5</th></tr></thead>
+                    <tbody>
+                        <tr><td>Lv 0-5</td><td>50</td><td>125</td><td>200</td><td>300</td><td>400</td></tr>
+                        <tr><td>Lv 6</td><td>75</td><td>225</td><td>300</td><td>450</td><td>600</td></tr>
+                        <tr><td>Lv 7</td><td>75</td><td>225</td><td>300</td><td>450</td><td>600</td></tr>
+                        <tr><td>Lv 8</td><td>75</td><td>225</td><td>300</td><td>450</td><td>600</td></tr>
+                        <tr><td>Lv 9</td><td>100</td><td>300</td><td>400</td><td>600</td><td>800</td></tr>
+                        <tr><td>Lv 10</td><td>100</td><td>300</td><td>400</td><td>600</td><td>800</td></tr>
+                        <tr><td>Lv 12</td><td>150</td><td>375</td><td>600</td><td>900</td><td>1200</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -100,6 +160,33 @@
                 box.innerText=`每 1 鑽石可換取：${res} 節點`; box.style.display='block';
             }
         }
+
+        // === 關鍵：由內而外控制高度 ===
+        function resizeParent() {
+            const height = document.documentElement.scrollHeight;
+            if(window.frameElement) {
+                window.frameElement.style.height = (height + 50) + 'px';
+            }
+        }
+        window.addEventListener('load', resizeParent);
+        window.addEventListener('resize', resizeParent);
+        const observer = new MutationObserver(resizeParent);
+        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+        setInterval(resizeParent, 200);
+
+        // 讓表格容器支援滾輪橫向滑動
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableContainer = document.querySelector('.table-container');
+            if (tableContainer) {
+                tableContainer.addEventListener('wheel', function(e) {
+                    // 如果有橫向滾動空間，攔截垂直滾輪事件並轉為橫向滾動
+                    if (this.scrollWidth > this.clientWidth) {
+                        e.preventDefault();
+                        this.scrollLeft += e.deltaY;
+                    }
+                }, { passive: false });
+            }
+        });
     </script>
 </body>
 </html>
