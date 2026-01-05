@@ -79,6 +79,16 @@
             background: linear-gradient(90deg, rgba(212, 167, 106, 0.3), rgba(212, 167, 106, 0.1));
             color: var(--accent-gold);
         }
+        /* 隱藏數字輸入框的加減按鈕 */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
         .action-btn { width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-gold { background: var(--accent-gold); color: #1a1815; font-size: 1.1em; }
         .btn-gold:hover { background: #f1c40f; }
@@ -123,9 +133,9 @@
         <div class="tech-card">
             <div class="card-title">鑽石節點 CP 值分析</div>
             <div class="grid-row">
-                <div class="grid-col"><label>強化等級</label><select id="rf-level"><option value="0-5">Lv 0-5</option><option value="6">Lv 6</option><option value="7">Lv 7</option><option value="8">Lv 8</option><option value="9">Lv 9</option><option value="10">Lv 10</option><option value="12">Lv 12</option></select></div>
                 <div class="grid-col"><label>裝備階級</label><select id="rf-tier"><option value="t1">T1 究極</option><option value="t2">T2 究極</option><option value="t3">T3 究極</option><option value="t4">T4 究極</option><option value="t5">T5 究極</option></select></div>
-                <div class="grid-col"><label>投入鑽石</label><input type="number" id="rf-diamonds" placeholder="輸入金額"></div>
+                <div class="grid-col"><label>強化等級</label><select id="rf-level"><option value="0-5">Lv 0-5</option><option value="6">Lv 6</option><option value="7">Lv 7</option><option value="8">Lv 8</option><option value="9">Lv 9</option><option value="10">Lv 10</option><option value="12">Lv 12</option></select></div>
+                <div class="grid-col"><label>投入鑽石</label><input type="number" id="rf-diamonds" placeholder="輸入鑽石數量" min="1" value=""></div>
             </div>
             <button class="action-btn btn-gold" onclick="calcRF()">開始計算</button>
             <div id="rf-result" class="result-box" style="display:none;"></div>
@@ -152,13 +162,20 @@
 
     <script>
         const rfCpData = { "0-5": {t1:50, t2:125, t3:200, t4:300, t5:400}, "6": {t1:75, t2:225, t3:300, t4:450, t5:600}, "7": {t1:75, t2:225, t3:300, t4:450, t5:600}, "8": {t1:75, t2:225, t3:300, t4:450, t5:600}, "9": {t1:100, t2:300, t3:400, t4:600, t5:800}, "10": {t1:100, t2:300, t3:400, t4:600, t5:800}, "12": {t1:150, t2:375, t3:600, t4:900, t5:1200} };
+
         function calcRF() {
-            const lv=document.getElementById('rf-level').value, t=document.getElementById('rf-tier').value, d=document.getElementById('rf-diamonds').value;
-            if(d>0){
-                const res=(rfCpData[lv][t]/d).toFixed(3);
-                const box=document.getElementById('rf-result');
-                box.innerText=`每 1 鑽石可換取：${res} 節點`; box.style.display='block';
+            const lv=document.getElementById('rf-level').value, t=document.getElementById('rf-tier').value;
+            let d = parseInt(document.getElementById('rf-diamonds').value);
+
+            // 確保有輸入數字且大於 0
+            if (!d || d < 1) {
+                alert('請輸入有效的鑽石數量');
+                return;
             }
+
+            const res=parseFloat((rfCpData[lv][t]/d).toFixed(3));
+            const box=document.getElementById('rf-result');
+            box.innerText=`每 1 鑽石可換取：${res} 節點`; box.style.display='block';
         }
 
         // === 關鍵：由內而外控制高度 ===
