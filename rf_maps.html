@@ -12,24 +12,15 @@
             --border: rgba(255, 255, 255, 0.1);
         }
 
-        /* === 關鍵修改：讓內容自己在 iframe 裡捲動 === */
         html, body {
             margin: 0; padding: 5px;
+            padding-bottom: 20px;
             font-family: 'Noto Sans TC', sans-serif;
             background: transparent;
             color: var(--text-main);
-            /* 讓這個頁面可以捲動 */
-            height: auto; 
-            min-height: 100%;
-            overflow-y: auto; 
+            height: auto;
+            overflow: hidden;
         }
-        
-        /* 美化 iframe 內部的捲軸 */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0b0c10; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
-
         * { box-sizing: border-box; }
 
         .tech-card {
@@ -37,87 +28,437 @@
             padding: 30px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             position: relative; overflow: hidden;
         }
-        /* ... 其餘 CSS 保持不變 ... */
-        .tech-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, transparent, var(--accent-gold), transparent); opacity: 0.7; }
-        .card-title { font-size: 1.4em; color: var(--accent-gold); border-left: 4px solid var(--accent-gold); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
-        .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
-        .map-card { background: linear-gradient(135deg, #0f1419 0%, #1a1f26 100%); border: 1px solid rgba(212, 167, 106, 0.3); border-radius: 8px; overflow: hidden; transition: all 0.3s; cursor: pointer; position: relative; }
-        .map-card:hover { border-color: var(--accent-gold); box-shadow: 0 0 20px rgba(212, 167, 106, 0.3); transform: translateY(-5px); }
-        .map-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
-        .map-label { padding: 12px; text-align: center; font-weight: bold; color: var(--accent-gold); font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; font-size: 1em; background: rgba(0,0,0,0.5); }
-        
+        .tech-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent); opacity: 0.7;
+        }
+        .card-title {
+            font-size: 1.4em; color: var(--accent-gold); border-left: 4px solid var(--accent-gold);
+            padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .map-card {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f26 100%);
+            border: 1px solid rgba(212, 167, 106, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .map-card:hover {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 20px rgba(212, 167, 106, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .map-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .map-label {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--accent-gold);
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 1px;
+            font-size: 1.1em;
+        }
+
         /* 燈箱樣式 */
-        .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.95); z-index: 9999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
-        .lightbox.active { display: flex; opacity: 1; }
-        .lightbox-content { position: relative; max-width: 90vw; max-height: 90vh; display: flex; justify-content: center; align-items: center; }
-        .lightbox-content img { max-width: 100%; max-height: 90vh; object-fit: contain; border: 2px solid var(--accent-gold); box-shadow: 0 0 50px rgba(212, 167, 106, 0.3); border-radius: 4px; }
-        .lightbox-close { position: absolute; top: 20px; right: 20px; background: var(--accent-gold); color: #000; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; z-index: 10000; }
-        .lightbox-close:hover { background: #f1c40f; }
-        @media (max-width: 700px) { .map-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            width: 95vw;
+            height: 95vh;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-content.dragging {
+            cursor: grabbing;
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 50px rgba(212, 167, 106, 0.5);
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+        }
+
+        .lightbox-close {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: 0.3s;
+            z-index: 10001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .lightbox-close:hover {
+            background: #f1c40f;
+            transform: scale(1.05);
+        }
+
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(212, 167, 106, 0.9);
+            color: #000;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 2em;
+            cursor: pointer;
+            transition: 0.3s;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-arrow:hover {
+            background: var(--accent-gold);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-arrow.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-arrow.disabled:hover {
+            transform: translateY(-50%) scale(1);
+        }
+
+        .nav-prev {
+            left: 20px;
+        }
+
+        .nav-next {
+            right: 20px;
+        }
+
+        .lightbox-title {
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: var(--accent-gold);
+            font-size: 1.2em;
+            font-weight: bold;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .zoom-indicator {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--accent-gold);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9em;
+            font-weight: bold;
+            border: 1px solid var(--accent-gold);
+        }
+
+        @media (max-width: 700px) {
+            .map-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="content-wrapper">
         <div class="tech-card">
             <div class="card-title">🗺️ Treasure Chest Map 寶箱地圖</div>
-            <div class="map-grid" id="map-grid"></div>
+
+            <div class="map-grid" id="map-grid">
+                <!-- Maps will be dynamically loaded here -->
+            </div>
         </div>
     </div>
 
+    <!-- Lightbox -->
     <div class="lightbox" id="lightbox" onclick="closeLightbox()">
         <button class="lightbox-close" onclick="closeLightbox()">✕ 關閉</button>
+        <button class="nav-arrow nav-prev" id="nav-prev" onclick="event.stopPropagation(); navigateMap(-1)">‹</button>
+        <button class="nav-arrow nav-next" id="nav-next" onclick="event.stopPropagation(); navigateMap(1)">›</button>
+
         <div class="lightbox-content" onclick="event.stopPropagation()">
-            <img id="lightbox-img" src="" alt="Map View">
+            <div class="zoom-indicator" id="zoom-indicator">縮放: 100%</div>
+            <img id="lightbox-img" src="" alt="">
+            <div class="lightbox-title" id="lightbox-title"></div>
         </div>
     </div>
 
     <script>
+        // 地圖數據
         const maps = [
-            { name: 'Treasure Chest Map 1', file: 'rf_images/maps/map1.jpg' },
-            { name: 'Treasure Chest Map 2', file: 'rf_images/maps/map2.jpg' },
-            { name: 'Treasure Chest Map 3', file: 'rf_images/maps/map3.jpg' },
-            { name: 'Treasure Chest Map 4', file: 'rf_images/maps/map4.jpg' },
-            { name: 'Treasure Chest Map 5', file: 'rf_images/maps/map5.jpg' },
-            { name: 'Treasure Chest Map 6', file: 'rf_images/maps/map6.jpg' },
-            { name: 'Treasure Chest Map 7', file: 'rf_images/maps/map7.jpg' },
-            { name: 'Treasure Chest Map 8', file: 'rf_images/maps/map8.jpg' },
-            { name: 'Treasure Chest Map 9', file: 'rf_images/maps/map9.jpg' },
-            { name: 'Treasure Chest Map 10', file: 'rf_images/maps/map10.jpg' },
-            { name: 'Treasure Chest Map 11', file: 'rf_images/maps/map11.jpg' }
+            { id: 1, name: 'Treasure Chest Map 1', file: 'rf_images/maps/Map1.jpg' },
+            { id: 2, name: 'Treasure Chest Map 2', file: 'rf_images/maps/Map2.jpg' },
+            { id: 3, name: 'Treasure Chest Map 3', file: 'rf_images/maps/Map3.jpg' },
+            { id: 4, name: 'Treasure Chest Map 4', file: 'rf_images/maps/Map4.jpg' },
+            { id: 5, name: 'Treasure Chest Map 5', file: 'rf_images/maps/Map5.jpg' },
+            { id: 6, name: 'Treasure Chest Map 6', file: 'rf_images/maps/Map6.jpg' },
+            { id: 7, name: 'Treasure Chest Map 7', file: 'rf_images/maps/Map7.jpg' },
+            { id: 8, name: 'Treasure Chest Map 8', file: 'rf_images/maps/Map8.jpg' },
+            { id: 9, name: 'Treasure Chest Map 9', file: 'rf_images/maps/Map9.jpg' },
+            { id: 10, name: 'Treasure Chest Map 10', file: 'rf_images/maps/Map10.jpg' },
+            { id: 11, name: 'Treasure Chest Map 11', file: 'rf_images/maps/Map11.jpg' }
         ];
 
+        // 動態生成地圖卡片
         function loadMaps() {
-            const grid = document.getElementById('map-grid');
+            const mapGrid = document.getElementById('map-grid');
             let html = '';
+
             maps.forEach(map => {
                 html += `
-                    <div class="map-card" onclick="openLightbox('${map.file}')">
-                        <img src="${map.file}" loading="lazy" alt="${map.name}">
+                    <div class="map-card" onclick="openLightbox('${map.file}', '${map.name}')">
+                        <img src="${map.file}" alt="${map.name}" loading="lazy">
                         <div class="map-label">${map.name}</div>
                     </div>
                 `;
             });
-            grid.innerHTML = html;
+
+            mapGrid.innerHTML = html;
         }
 
-        function openLightbox(src) {
+        // 縮放和拖曳變數
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let currentMapIndex = 0;
+
+        // 開啟燈箱
+        function openLightbox(imageSrc, title) {
+            // 找到當前地圖的索引
+            currentMapIndex = maps.findIndex(map => map.file === imageSrc);
+
             const lightbox = document.getElementById('lightbox');
-            const img = document.getElementById('lightbox-img');
-            img.src = src;
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxTitle = document.getElementById('lightbox-title');
+
+            lightboxImg.src = imageSrc;
+            lightboxTitle.textContent = title;
             lightbox.classList.add('active');
+
+            // 重置縮放和位置
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+            updateNavigationButtons();
         }
 
+        // 導航到上一張或下一張地圖
+        function navigateMap(direction) {
+            const newIndex = currentMapIndex + direction;
+
+            // 檢查是否超出範圍
+            if (newIndex < 0 || newIndex >= maps.length) {
+                return;
+            }
+
+            currentMapIndex = newIndex;
+            const map = maps[currentMapIndex];
+
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxTitle = document.getElementById('lightbox-title');
+
+            lightboxImg.src = map.file;
+            lightboxTitle.textContent = map.name;
+
+            // 重置縮放和位置
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+            updateNavigationButtons();
+        }
+
+        // 更新導航按鈕狀態
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('nav-prev');
+            const nextBtn = document.getElementById('nav-next');
+
+            // 更新上一張按鈕
+            if (currentMapIndex <= 0) {
+                prevBtn.classList.add('disabled');
+                prevBtn.disabled = true;
+            } else {
+                prevBtn.classList.remove('disabled');
+                prevBtn.disabled = false;
+            }
+
+            // 更新下一張按鈕
+            if (currentMapIndex >= maps.length - 1) {
+                nextBtn.classList.add('disabled');
+                nextBtn.disabled = true;
+            } else {
+                nextBtn.classList.remove('disabled');
+                nextBtn.disabled = false;
+            }
+        }
+
+        // 關閉燈箱
         function closeLightbox() {
             const lightbox = document.getElementById('lightbox');
             lightbox.classList.remove('active');
+
+            // 重置縮放和位置
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
         }
 
-        // 初始化
-        window.addEventListener('load', () => {
-            loadMaps();
+        // 更新圖片變換
+        function updateTransform() {
+            const lightboxImg = document.getElementById('lightbox-img');
+            const zoomIndicator = document.getElementById('zoom-indicator');
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            zoomIndicator.textContent = `縮放: ${Math.round(scale * 100)}%`;
+        }
+
+        // 滑鼠滾輪縮放
+        document.addEventListener('DOMContentLoaded', function() {
+            const lightboxContent = document.querySelector('.lightbox-content');
+            const lightboxImg = document.getElementById('lightbox-img');
+
+            // 滾輪縮放
+            lightboxContent.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                const newScale = Math.min(Math.max(0.5, scale + delta), 5);
+
+                scale = newScale;
+                updateTransform();
+            }, { passive: false });
+
+            // 滑鼠拖曳
+            lightboxContent.addEventListener('mousedown', function(e) {
+                if (e.target === lightboxImg) {
+                    isDragging = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    lightboxContent.classList.add('dragging');
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging) {
+                    translateX = e.clientX - startX;
+                    translateY = e.clientY - startY;
+                    updateTransform();
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    lightboxContent.classList.remove('dragging');
+                }
+            });
         });
-        
-        // ★★★ 注意：這裡已經移除了所有高度計算與回報的程式碼 ★★★
+
+        // 鍵盤快捷鍵
+        document.addEventListener('keydown', function(e) {
+            const lightbox = document.getElementById('lightbox');
+
+            // 只在燈箱開啟時處理鍵盤事件
+            if (!lightbox.classList.contains('active')) {
+                return;
+            }
+
+            switch(e.key) {
+                case 'Escape':
+                    closeLightbox();
+                    break;
+                case 'ArrowLeft':
+                    navigateMap(-1);
+                    break;
+                case 'ArrowRight':
+                    navigateMap(1);
+                    break;
+            }
+        });
+
+        // === 關鍵：由內而外控制高度 ===
+        function resizeParent() {
+            const height = document.documentElement.scrollHeight;
+            if(window.frameElement) {
+                window.frameElement.style.height = (height + 50) + 'px';
+            }
+        }
+
+        window.addEventListener('load', function() {
+            loadMaps();
+            resizeParent();
+        });
+        window.addEventListener('resize', resizeParent);
+        const observer = new MutationObserver(resizeParent);
+        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+        setInterval(resizeParent, 200);
     </script>
 </body>
 </html>
