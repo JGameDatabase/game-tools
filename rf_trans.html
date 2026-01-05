@@ -234,9 +234,92 @@
         td:first-child { text-align: left; color: #fff; font-weight: bold; }
         tr:hover td { background: rgba(255,255,255,0.05); }
 
+        .filter-section {
+            margin-bottom: 25px;
+            background: rgba(15, 20, 25, 0.6);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .filter-title {
+            color: var(--accent-gold);
+            font-size: 0.95em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .filter-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .filter-item.unchecked {
+            background: rgba(100, 50, 50, 0.15);
+            border: 1px solid rgba(150, 70, 70, 0.3);
+        }
+        .filter-item.unchecked:hover {
+            background: rgba(100, 50, 50, 0.25);
+        }
+        .filter-item.unchecked label {
+            color: #888;
+            text-decoration: line-through;
+        }
+        .filter-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-gold);
+            pointer-events: auto;
+            position: relative;
+            z-index: 1;
+        }
+        .filter-item label {
+            margin: 0;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+            transition: 0.2s;
+        }
+        .filter-controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(212, 167, 106, 0.1);
+            border: 1px solid rgba(212, 167, 106, 0.3);
+            color: var(--accent-gold);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: 0.3s;
+        }
+        .filter-btn:hover {
+            background: rgba(212, 167, 106, 0.2);
+            border-color: var(--accent-gold);
+        }
+
         @media (max-width: 700px) {
             .grid-row { flex-direction: column; gap: 10px; }
             .combo-details { grid-template-columns: 1fr; }
+            .filter-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
         }
     </style>
 </head>
@@ -245,6 +328,25 @@
     <div id="content-wrapper">
         <div class="tech-card">
             <div class="card-title">物質變換 (頭飾) 計算機</div>
+
+            <div class="filter-section">
+                <div class="filter-title">🔍 物品過濾器</div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #999; font-size: 0.9em; margin-bottom: 10px; font-weight: bold;">裝備階級 (欄)</div>
+                    <div class="filter-grid" id="tier-filter-grid"></div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #999; font-size: 0.9em; margin-bottom: 10px; font-weight: bold;">強化等級 (列)</div>
+                    <div class="filter-grid" id="grade-filter-grid"></div>
+                </div>
+
+                <div class="filter-controls">
+                    <button class="filter-btn" onclick="selectAllFilters()">全選</button>
+                    <button class="filter-btn" onclick="deselectAllFilters()">全不選</button>
+                </div>
+            </div>
 
             <div class="grid-row">
                 <div class="grid-col">
@@ -328,6 +430,10 @@
 
         const gradeNames = ["安定(普)", "過2(普)", "過3-4(普)", "安定(究)", "過2(究)", "過3-4(究)"];
 
+        // 存儲選中的階級和等級
+        let selectedTiers = new Set();
+        let selectedGrades = new Set();
+
         const stages = {
             70: "第2階：藍 T1",
             100: "第3階：藍 T2",
@@ -343,6 +449,133 @@
             4400: "第13階：紫 T5"
         };
 
+        // 初始化過濾器
+        function initializeFilters() {
+            const tierFilterGrid = document.getElementById('tier-filter-grid');
+            const gradeFilterGrid = document.getElementById('grade-filter-grid');
+
+            // 獲取所有階級（欄）
+            const tiers = Object.keys(transData);
+
+            // 默認全選
+            tiers.forEach(tier => selectedTiers.add(tier));
+            gradeNames.forEach((_, idx) => selectedGrades.add(idx));
+
+            // 生成階級過濾器
+            let tierHtml = '';
+            tiers.forEach(tier => {
+                const tierName = transData[tier].name;
+                tierHtml += `
+                    <div class="filter-item" onclick="toggleTierFilter('${tier}')">
+                        <input type="checkbox" id="tier_${tier}" checked onclick="event.stopPropagation()" onchange="handleTierFilterChange('${tier}')">
+                        <label for="tier_${tier}">${tierName}</label>
+                    </div>
+                `;
+            });
+            tierFilterGrid.innerHTML = tierHtml;
+
+            // 生成等級過濾器
+            let gradeHtml = '';
+            gradeNames.forEach((gradeName, idx) => {
+                gradeHtml += `
+                    <div class="filter-item" onclick="toggleGradeFilter(${idx})">
+                        <input type="checkbox" id="grade_${idx}" checked onclick="event.stopPropagation()" onchange="handleGradeFilterChange(${idx})">
+                        <label for="grade_${idx}">${gradeName}</label>
+                    </div>
+                `;
+            });
+            gradeFilterGrid.innerHTML = gradeHtml;
+        }
+
+        // 切換階級過濾器
+        function toggleTierFilter(tier) {
+            const checkbox = document.getElementById(`tier_${tier}`);
+            checkbox.checked = !checkbox.checked;
+            handleTierFilterChange(tier);
+        }
+
+        // 切換等級過濾器
+        function toggleGradeFilter(gradeIdx) {
+            const checkbox = document.getElementById(`grade_${gradeIdx}`);
+            checkbox.checked = !checkbox.checked;
+            handleGradeFilterChange(gradeIdx);
+        }
+
+        // 處理階級過濾器變化
+        function handleTierFilterChange(tier) {
+            const checkbox = document.getElementById(`tier_${tier}`);
+            const filterItem = checkbox.closest('.filter-item');
+
+            if (checkbox.checked) {
+                selectedTiers.add(tier);
+                filterItem.classList.remove('unchecked');
+            } else {
+                selectedTiers.delete(tier);
+                filterItem.classList.add('unchecked');
+            }
+            recalculateIfNeeded();
+        }
+
+        // 處理等級過濾器變化
+        function handleGradeFilterChange(gradeIdx) {
+            const checkbox = document.getElementById(`grade_${gradeIdx}`);
+            const filterItem = checkbox.closest('.filter-item');
+
+            if (checkbox.checked) {
+                selectedGrades.add(gradeIdx);
+                filterItem.classList.remove('unchecked');
+            } else {
+                selectedGrades.delete(gradeIdx);
+                filterItem.classList.add('unchecked');
+            }
+            recalculateIfNeeded();
+        }
+
+        // 全選
+        function selectAllFilters() {
+            // 選中所有階級
+            Object.keys(transData).forEach(tier => {
+                selectedTiers.add(tier);
+                const checkbox = document.getElementById(`tier_${tier}`);
+                if (checkbox) checkbox.checked = true;
+            });
+
+            // 選中所有等級
+            gradeNames.forEach((_, idx) => {
+                selectedGrades.add(idx);
+                const checkbox = document.getElementById(`grade_${idx}`);
+                if (checkbox) checkbox.checked = true;
+            });
+
+            recalculateIfNeeded();
+        }
+
+        // 全不選
+        function deselectAllFilters() {
+            // 取消所有階級
+            selectedTiers.clear();
+            Object.keys(transData).forEach(tier => {
+                const checkbox = document.getElementById(`tier_${tier}`);
+                if (checkbox) checkbox.checked = false;
+            });
+
+            // 取消所有等級
+            selectedGrades.clear();
+            gradeNames.forEach((_, idx) => {
+                const checkbox = document.getElementById(`grade_${idx}`);
+                if (checkbox) checkbox.checked = false;
+            });
+
+            recalculateIfNeeded();
+        }
+
+        // 如果需要則重新計算
+        function recalculateIfNeeded() {
+            if (document.getElementById('target-crown').value) {
+                calculateCombos();
+            }
+        }
+
         // 建立所有可能的物品（裝備+強化組合）
         function getAllItems() {
             const items = [];
@@ -352,6 +585,7 @@
                         key: key,
                         name: data.name,
                         grade: gradeNames[gradeIdx],
+                        gradeIdx: gradeIdx,
                         score: score,
                         id: `${key}_${gradeIdx}`
                     });
@@ -361,9 +595,16 @@
             return items.sort((a, b) => b.score - a.score);
         }
 
+        // 獲取已選中的物品（根據階級和等級過濾）
+        function getSelectedItems() {
+            return getAllItems().filter(item =>
+                selectedTiers.has(item.key) && selectedGrades.has(item.gradeIdx)
+            );
+        }
+
         // 計算所有可能的4件組合
         function findCombinations(targetScore) {
-            const items = getAllItems();
+            const items = getSelectedItems();
             const exactMatches = [];
             const closeMatches = [];
 
@@ -484,7 +725,10 @@
         }
 
         // 監聽內容變化
-        window.addEventListener('load', notifyParentResize);
+        window.addEventListener('load', () => {
+            initializeFilters();
+            notifyParentResize();
+        });
         const observer = new MutationObserver(notifyParentResize);
         observer.observe(document.body, { attributes: true, childList: true, subtree: true });
 
