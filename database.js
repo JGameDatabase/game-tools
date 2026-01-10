@@ -286,18 +286,18 @@ const database = {
     },
 
     // ==================== HEAVY & MELEE (依照截圖) ====================
-    "rpg": { cn: "RPG發射器", en: "RPG", type: "weapon", desc: "最大爆炸範圍，一發摧毀屍塔。", builds: [{name:"一擊必殺", desc:"最大化直擊傷害。"}] },
-    "mgl": { cn: "MGL", en: "MGL", type: "weapon", desc: "連發榴彈。", builds: [{name:"燃燒榴彈", desc:"叛逆者專屬，製造火海。"}] },
-    "mrl": { cn: "多管火箭發射器", en: "MRL", type: "weapon", desc: "四連發火箭。", builds: [{name:"區域覆蓋", desc:"地毯式轟炸。"}] },
-    "payload": { cn: "爆破步槍", en: "PAYLOAD RIFLE", type: "weapon", desc: "高爆狙擊。", builds: [{name:"弱點打擊", desc:"精準爆破。"}] },
-    "heavy_shotgun": { cn: "重型突擊霰彈槍", en: "HEAVY SHOTGUN", type: "weapon", desc: "全自動重噴。", builds: [{name:"清道夫", desc:"極高DPS。"}] },
-    "machine_gun": { cn: "機槍", en: "MACHINE GUN", type: "weapon", desc: "持續火力。", builds: [{name:"防線核心", desc:"長時間壓制。"}] },
-    "flamethrower": { cn: "火焰噴射器", en: "FLAMETHROWER", type: "weapon", desc: "持續燃燒。", builds: [{name:"封門戰術", desc:"製造火牆。"}] },
-    "chainsaw": { cn: "鏈鋸", en: "CHAINSAW", type: "weapon", desc: "近戰切割。", builds: [{name:"推土機", desc:"向前推進。"}] },
+    "rpg": { cn: "RPG發射器", en: "RPG", type: "weapon", desc: "最大爆炸範圍，一發摧毀屍塔。", builds: [{name:"暫無", desc:"暫無"}] },
+    "mgl": { cn: "MGL", en: "MGL", type: "weapon", desc: "連發榴彈。", builds: [{name:"暫無", desc:"暫無"}] },
+    "mrl": { cn: "多管火箭發射器", en: "MRL", type: "weapon", desc: "四連發火箭。", builds: [{name:"暫無", desc:"暫無"}] },
+    "payload": { cn: "爆破步槍", en: "PAYLOAD RIFLE", type: "weapon", desc: "高爆狙擊。", builds: [{name:"暫無", desc:"暫無"}] },
+    "heavy_shotgun": { cn: "重型突擊霰彈槍", en: "HEAVY SHOTGUN", type: "weapon", desc: "全自動重噴。", builds: [{name:"暫無", desc:"暫無"}] },
+    "machine_gun": { cn: "機槍", en: "MACHINE GUN", type: "weapon", desc: "持續火力。", builds: [{name:"暫無", desc:"暫無"}] },
+    "flamethrower": { cn: "火焰噴射器", en: "FLAMETHROWER", type: "weapon", desc: "持續燃燒。", builds: [{name:"暫無", desc:"暫無"}] },
+    "chainsaw": { cn: "鏈鋸", en: "CHAINSAW", type: "weapon", desc: "近戰切割。", builds: [{name:"暫無", desc:"暫無"}] },
 
-    "light_melee": { cn: "輕型近戰武器", en: "LIGHT MELEE", type: "weapon", desc: "揮舞快，耗體少。", builds: [{name:"高速揮砍", desc:"快速清理。"}] },
-    "medium_melee": { cn: "中型近戰武器", en: "MEDIUM MELEE", type: "weapon", desc: "均衡選擇。", builds: [{name:"多目標打擊", desc:"範圍適中。"}] },
-    "heavy_melee": { cn: "重型近戰武器", en: "HEAVY MELEE", type: "weapon", desc: "高傷，硬直大。", builds: [{name:"擊倒效果", desc:"控場強。"}] },
+    "light_melee": { cn: "輕型近戰武器", en: "LIGHT MELEE", type: "weapon", desc: "揮舞快，耗體少。", builds: [{name:"暫無", desc:"暫無"}] },
+    "medium_melee": { cn: "中型近戰武器", en: "MEDIUM MELEE", type: "weapon", desc: "均衡選擇。", builds: [{name:"暫無", desc:"暫無"}] },
+    "heavy_melee": { cn: "重型近戰武器", en: "HEAVY MELEE", type: "weapon", desc: "高傷，硬直大。", builds: [{name:"暫無", desc:"暫無"}] },
 
     // ==================== CLASSES (八大職業) ====================
     "gunslinger": {
