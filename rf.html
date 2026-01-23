@@ -16,7 +16,6 @@
         }
         * { box-sizing: border-box; }
         
-        /* === 關鍵修改 1：鎖定視窗高度，禁止外部捲動 === */
         body { 
             font-family: 'Noto Sans TC', 'Rajdhani', sans-serif; 
             background-color: var(--bg-deep); 
@@ -32,14 +31,14 @@
             max-width: 1400px; 
             margin: 0 auto; 
             width: 100%; 
-            height: 100%; /* 繼承高度 */
+            height: 100%; 
             display: flex; flex-direction: column; 
         }
 
         header { 
             display: flex; justify-content: space-between; align-items: center;
             padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
-            flex-shrink: 0; /* 標題區不壓縮 */
+            flex-shrink: 0; 
         }
         h1 { 
             font-family: 'Rajdhani', sans-serif; margin: 0; font-size: 2em; letter-spacing: 3px; 
@@ -52,12 +51,11 @@
         }
         .nav-btn:hover { background: var(--accent-gold); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
 
-        /* === 關鍵修改 2：版面配置 === */
         .layout-main { 
             display: flex; 
             gap: 30px; 
-            flex: 1; /* 佔滿剩餘高度 */
-            overflow: hidden; /* 防止溢出 */
+            flex: 1; 
+            overflow: hidden; 
         }
         
         .sidebar {
@@ -68,7 +66,7 @@
             padding: 20px;
             border: 1px solid var(--border); 
             display: flex; flex-direction: column; gap: 10px;
-            overflow-y: auto; /* 允許側邊欄自己捲動 */
+            overflow-y: auto; 
         }
         .menu-title { font-size: 0.8em; color: #666; margin-bottom: 5px; padding-left: 10px; font-weight: bold; }
         .menu-btn {
@@ -81,23 +79,24 @@
             color: var(--accent-gold); border-left: 4px solid var(--accent-gold);
         }
 
+        /* 讓戰情室按鈕特別顯眼一點 */
+        .btn-finance { color: #dcb36c; } 
+
         .content-area { 
             flex-grow: 1; 
             display: flex; 
             flex-direction: column; 
-            height: 100%; /* 佔滿高度 */
-            background: rgba(0,0,0,0.2); /* 稍微深色背景 */
+            height: 100%; 
+            background: rgba(0,0,0,0.2); 
             border-radius: 12px;
         }
         
-        /* === 關鍵修改 3：Iframe 填滿且自帶捲軸 === */
         iframe {
             width: 100%; 
-            height: 100%; /* 填滿 content-area */
+            height: 100%; 
             border: none; 
             border-radius: 12px;
             display: block; 
-            /* 這裡不需要 overflow:hidden，因為我們要讓 iframe 自己捲動 */
         }
 
         @media (max-width: 900px) {
@@ -116,14 +115,17 @@
 
         <div class="layout-main">
             <div class="sidebar">
-                <div class="menu-title">SYSTEM TOOLS</div>
+                <div class="menu-title">FINANCIAL TOOLS</div>
+                <button class="menu-btn btn-finance active" onclick="loadFrame('rf_finance.html', this)">📊 資產資料庫 (記帳)</button>
+                
+                <div class="menu-title" style="margin-top:15px;">SYSTEM TOOLS</div>
                 <button class="menu-btn" onclick="loadFrame('rf_trans.html', this)">⚖️ 物質變換計算</button>
                 <button class="menu-btn" onclick="loadFrame('rf_cp.html', this)">💎 鑽石 CP / 節點表</button>
-                <button class="menu-btn active" onclick="loadFrame('rf_maps.html', this)">🗺️ 寶箱地圖瀏覽</button>
+                <button class="menu-btn" onclick="loadFrame('rf_maps.html', this)">🗺️ 寶箱地圖瀏覽</button>
             </div>
 
             <div class="content-area">
-                <iframe id="main-frame" src="rf_maps.html"></iframe>
+                <iframe id="main-frame" src="rf_finance.html"></iframe>
             </div>
         </div>
     </div>
@@ -135,7 +137,6 @@
             document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            // 簡單的淡入淡出
             iframe.style.opacity = 0;
             setTimeout(() => { 
                 iframe.src = url; 
@@ -143,11 +144,7 @@
             }, 200);
         }
         
-        // 確保初始載入有淡入效果
         iframe.onload = () => { iframe.style.opacity = 1; };
-
-        // ★★★ 注意：這裡已經完全移除了所有 resizeParent / setInterval 相關代碼 ★★★
-        // 這能確保絕對不會發生無限迴圈
     </script>
 </body>
 </html>

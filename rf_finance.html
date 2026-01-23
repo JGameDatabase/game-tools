@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RF 資產簿</title>
+    <style>
+        :root {
+            /* === 琥珀黑配色 === */
+            --bg: #1a1817; --panel: #262322; --border: #3d3633;
+            --text: #e6dfd6; --text-dim: #8c8580;
+            --gold: #dcb36c; --green: #8fb35d; --red: #d66e6e;
+            --blue: #6ca0dc; --purple: #b589d6; --cyan: #6cdccf; --orange: #dc966c;
+            /* 新增轉換色 */
+            --convert: #d4a76a; 
+        }
+
+        /* 滾動條美化 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #3d3633; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+        body {
+            font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, sans-serif;
+            background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 40px 20px 80px; letter-spacing: 0.5px;
+            overflow-y: overlay;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        /* 鎖定畫面 */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .login-box {
+            background: var(--panel); padding: 40px; border-radius: 12px;
+            border: 1px solid var(--border); text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .login-title { color: var(--gold); font-size: 1.5em; margin-bottom: 20px; font-weight: bold; letter-spacing: 2px; }
+        .login-input {
+            background: #111 !important; border: 1px solid var(--border) !important; color: var(--gold) !important;
+            padding: 10px; font-size: 1.2em; text-align: center; letter-spacing: 5px;
+            width: 200px; border-radius: 6px; margin-bottom: 20px; font-family: monospace;
+        }
+        .login-btn {
+            background: var(--gold); color: #000; border: none; padding: 10px 30px;
+            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 1em;
+        }
+        .login-btn:hover { filter: brightness(1.1); }
+
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 1.4em; font-weight: 600; color: var(--gold); letter-spacing: 2px; }
+        .header h1 span { font-size: 0.5em; color: var(--text-dim); margin-left: 10px; border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; vertical-align: middle; }
+        .tools button { background: none; border: none; color: var(--text-dim); font-size: 0.9em; cursor: pointer; margin-left: 15px; padding: 5px; transition: 0.2s; }
+        .tools button:hover { color: var(--text); }
+
+        /* Scoreboard */
+        .scoreboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 50px; }
+        .score-item { text-align: left; border-left: 2px solid var(--border); padding-left: 15px; }
+        .score-item:first-child { border-left: none; padding-left: 0; }
+        .score-label { font-size: 0.8em; color: var(--text-dim); margin-bottom: 8px; }
+        .score-num { font-size: 1.6em; font-weight: 700; font-family: 'Consolas', monospace; }
+        .c-gold { color: var(--gold); } .c-green { color: var(--green); } .c-red { color: var(--red); } .c-purple { color: var(--purple); } .c-cyan { color: var(--cyan); }
+        @media (max-width: 900px) { .scoreboard { grid-template-columns: 1fr 1fr; gap: 30px;} .score-item { border-left: none; border-top: 1px solid var(--border); padding-top: 10px;} }
+
+        /* Main Grid */
+        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; margin-bottom: 40px; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+        .panel-header { margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        h2 { margin: 0; font-size: 1em; font-weight: 500; color: var(--text-dim); }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th { text-align: left; color: var(--text-dim); padding: 10px 0; border-bottom: 1px solid var(--border); font-weight: normal; font-size: 0.85em; }
+        td { padding: 12px 0; border-bottom: 1px solid #2a2624; color: var(--text); }
+        .mono-num { font-family: 'Consolas', monospace; }
+        .break-even { color: var(--gold); background: rgba(220, 179, 108, 0.1); padding: 2px 6px; border-radius: 4px; }
+
+        /* Tabs */
+        .tab-container { display: flex; flex-wrap: wrap; gap: 5px; border-bottom: 1px solid var(--border); margin-bottom: 25px; padding-bottom: 5px; }
+        .tab { padding: 8px 16px; cursor: pointer; font-size: 0.9em; color: var(--text-dim); border-radius: 4px; transition: 0.2s; background: rgba(255,255,255,0.03); }
+        .tab:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+        .tab.active { color: #1a1817; font-weight: bold; }
+        /* Tab Colors */
+        .tab.active[data-val="buy"] { background: var(--blue); }
+        .tab.active[data-val="sell_trade"] { background: var(--green); }
+        .tab.active[data-val="sell_loot"] { background: var(--purple); color: #fff; }
+        .tab.active[data-val="craft"] { background: var(--orange); }
+        .tab.active[data-val="convert"] { background: var(--convert); }
+        .tab.active[data-val="use"] { background: var(--red); color: #fff; }
+        .tab.active[data-val="cash_out"] { background: var(--cyan); }
+
+        /* Input */
+        .input-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.8em; color: var(--text-dim); }
+        input { 
+            width: 100%; padding: 10px 0; 
+            background-color: transparent !important; border: none; border-bottom: 1px solid var(--border); 
+            color: var(--text) !important; font-family: 'Consolas', monospace; font-size: 1.2em;
+            border-radius: 0; transition: 0.3s; -moz-appearance: textfield; 
+        }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input:focus { outline: none; border-bottom-color: var(--gold); }
+        input::placeholder { color: #3d3633; }
+        .smart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        #btnSubmit { 
+            width: 100%; padding: 15px; margin-top: 15px; 
+            background: var(--gold); color: #1a1817; border: none; 
+            font-weight: 600; letter-spacing: 1px; font-size: 1em; border-radius: 4px; cursor: pointer;
+        }
+        #btnSubmit:hover { opacity: 0.9; }
+
+        .section-box { display: none; }
+
+        /* Ledger */
+        .log-row { display: grid; grid-template-columns: 1fr 0.8fr 2fr 1fr 0.5fr; padding: 12px 0; border-bottom: 1px solid #2a2624; align-items: center; font-size: 0.9em; color: var(--text-dim); }
+        .log-row:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+        .tag-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        .dot-buy { background: var(--blue); } .dot-sell { background: var(--green); }
+        .dot-loot { background: var(--purple); } .dot-use { background: var(--red); }
+        .dot-craft { background: var(--orange); } .dot-cash { background: var(--cyan); }
+        .dot-convert { background: var(--convert); }
+
+        #importFile { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="loginOverlay">
+    <div class="login-box">
+        <div class="login-title">ACCESS LOCKED</div>
+        <input type="password" id="passInput" class="login-input" placeholder="PASSCODE" onkeyup="checkEnter(event)">
+        <br>
+        <button class="login-btn" onclick="checkPass()">UNLOCK</button>
+        <div style="margin-top:15px; color:#555; font-size:0.8em;">RF ONLINE NEXT STRATEGY</div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <h1>RF 資產簿</h1>
+        <div class="tools">
+            <button onclick="exportData()">備份數據</button>
+            <button onclick="document.getElementById('importFile').click()">還原備份</button>
+            <button onclick="clearData()" style="color:var(--red)">清空重置</button>
+            <input type="file" id="importFile" accept=".json" onchange="importData(this)">
+        </div>
+    </div>
+
+    <div class="scoreboard">
+        <div class="score-item"><div class="score-label">累計套現 (TWD)</div><div class="score-num c-cyan" id="dispRealMoney">0</div></div>
+        <div class="score-item"><div class="score-label">遊戲內現金流</div><div class="score-num" id="dispCashFlow">0</div></div>
+        <div class="score-item"><div class="score-label">操盤獲利</div><div class="score-num c-green" id="dispTradeProfit">0</div></div>
+        <div class="score-item"><div class="score-label">打寶收入</div><div class="score-num c-purple" id="dispLootIncome">0</div></div>
+        <div class="score-item"><div class="score-label">機體消費</div><div class="score-num c-red" id="dispExpense">0</div></div>
+    </div>
+
+    <div class="main-grid">
+        <div class="panel">
+            <div class="panel-header"><h2>庫存監控 (交易倉)</h2></div>
+            <table id="inventoryTable">
+                <thead><tr><th>物品名稱</th><th>持有量</th><th>成本均價</th><th style="color:var(--gold)">⚡保本賣價(含稅)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header"><h2>交易控制台</h2></div>
+            
+            <div class="tab-container">
+                <div class="tab active" data-val="buy" onclick="setType('buy')">買入</div>
+                <div class="tab" data-val="sell_trade" onclick="setType('sell_trade')">賣貨</div>
+                <div class="tab" data-val="sell_loot" onclick="setType('sell_loot')">賣寶</div>
+                <div class="tab" data-val="craft" onclick="setType('craft')">合成</div>
+                <div class="tab" data-val="convert" onclick="setType('convert')">轉自用</div> <div class="tab" data-val="use" onclick="setType('use')">自用</div>
+                <div class="tab" data-val="cash_out" onclick="setType('cash_out')">套現</div>
+            </div>
+
+            <div id="normalSection" class="section-box" style="display:block;">
+                <div class="input-group">
+                    <label>物品名稱</label>
+                    <input list="itemSuggestions" id="inItem" placeholder="搜尋或輸入名稱...">
+                    <datalist id="itemSuggestions"><option value="5萬C幣卡"><option value="50萬C幣卡"><option value="鐵礦"><option value="強化石"></datalist>
+                </div>
+                
+                <div class="smart-row">
+                    <div class="input-group"><label>數量</label><input type="number" id="inQty" placeholder="0" oninput="autoCalc('qty')"></div>
+                    <div class="input-group"><label id="lblPrice">單價 (鑽)</label><input type="number" id="inPrice" step="0.001" placeholder="0.00" oninput="autoCalc('price')"></div>
+                </div>
+                
+                <div class="input-group"><label>總金額 (自動換算)</label><input type="number" id="inTotal" step="0.1" placeholder="0.00" oninput="autoCalc('total')" style="color:var(--gold)"></div>
+            </div>
+
+            <div id="convertSection" class="section-box" style="background: rgba(212, 167, 106, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--convert);">
+                <div style="color:var(--convert); font-weight:bold; margin-bottom:15px; text-align:center;">🔄 將庫存轉為自用 (消耗庫存，增加消費)</div>
+                <div class="input-group">
+                    <label>物品名稱 (必須是庫存有的)</label>
+                    <input list="itemSuggestions" id="cvItem" placeholder="選擇庫存物品...">
+                </div>
+                <div class="input-group">
+                    <label>轉換數量</label>
+                    <input type="number" id="cvQty" placeholder="0">
+                </div>
+                <div style="font-size:0.8em; color:#666;">* 系統將自動依據「當前均價」計算成本並轉移。</div>
+            </div>
+
+            <div id="craftSection" class="section-box">
+                <div class="smart-row"><div class="input-group"><label>消耗原料</label><input list="itemSuggestions" id="srcItem" placeholder="來源"></div><div class="input-group"><label>消耗數量</label><input type="number" id="srcQty" placeholder="0"></div></div>
+                <div style="text-align:center; color:var(--text-dim); margin-bottom:15px; font-size:0.8em;">↓ 加工轉換 ↓</div>
+                <div class="smart-row"><div class="input-group"><label>獲得成品</label><input list="itemSuggestions" id="tgtItem" placeholder="目標"></div><div class="input-group"><label>獲得數量</label><input type="number" id="tgtQty" placeholder="0"></div></div>
+                <div class="input-group"><label>合成手續費 (鑽)</label><input type="number" id="craftFee" placeholder="0" value="0"></div>
+            </div>
+
+            <div id="cashOutSection" class="section-box">
+                <div class="input-group"><label style="color:var(--text)">賣出鑽石數量</label><input type="number" id="cashQty" placeholder="例如: 6000" oninput="autoCalcCash('qty')"></div>
+                <div class="smart-row">
+                    <div class="input-group"><label style="color:var(--gold)">獲得台幣 (TWD)</label><input type="number" id="cashTotal" placeholder="例如: 1000" oninput="autoCalcCash('total')"></div>
+                    <div class="input-group"><label>匯率 (幾鑽換1元)</label><input type="number" id="cashRatio" step="0.001" placeholder="例如: 6" oninput="autoCalcCash('ratio')"></div>
+                </div>
+            </div>
+            
+            <button id="btnSubmit" onclick="submitTrade()">執行操作</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><h2>交易紀錄</h2></div>
+        <div id="ledgerList"></div>
+        <div style="text-align:center; margin-top:20px;">
+            <button onclick="loadMore()" id="btnLoadMore" style="background:none; border:none; color:var(--text-dim); font-size:0.9em; display:none;">▼ 載入更多紀錄</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const PASSWORD = "5490";
+    function checkPass() { if(document.getElementById('passInput').value === PASSWORD) { document.getElementById('loginOverlay').style.display = 'none'; } else { alert("密碼錯誤"); document.getElementById('passInput').value = ""; document.getElementById('passInput').focus(); } }
+    function checkEnter(e) { if(e.key === "Enter") checkPass(); }
+    window.onload = function() { document.getElementById('passInput').focus(); renderAll(); }
+
+    const TAX_RATE = 0.08; 
+    let trades = JSON.parse(localStorage.getItem('rf_trade_data')) || [];
+    let currentType = 'buy'; 
+    let displayLimit = 20;
+    
+    // 全局變數暫存庫存狀態，供轉換檢查用
+    let currentInventoryState = {}; 
+
+    const typeConfig = {
+        'buy':        { label: '確認買入 (囤貨)', needPrice: true, priceLabel: '單價 (成本)' },
+        'use':        { label: '確認消費 (直接花費)', needPrice: true, priceLabel: '單價 (成本)' },
+        'sell_trade': { label: '確認賣出 (交易)', needPrice: true, priceLabel: '實收單價 (稅後)' },
+        'sell_loot':  { label: '確認賣出 (打寶)', needPrice: true, priceLabel: '實收單價 (稅後)' },
+        'craft':      { label: '執行合成加工', needPrice: false },
+        'convert':    { label: '執行庫存轉自用', needPrice: false },
+        'cash_out':   { label: '確認套現 (RMT)', needPrice: false }
+    };
+
+    updateInputState();
+
+    function setType(type) {
+        currentType = type;
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.tab[data-val="${type}"]`).classList.add('active');
+        updateInputState();
+    }
+
+    function updateInputState() {
+        const config = typeConfig[currentType];
+        const btn = document.getElementById('btnSubmit');
+        const sections = ['normalSection', 'craftSection', 'convertSection', 'cashOutSection'];
+        const priceInput = document.getElementById('inPrice');
+        const totalInput = document.getElementById('inTotal');
+        const lblPrice = document.getElementById('lblPrice');
+
+        btn.innerText = config.label;
+        btn.style.background = `var(--${getThemeColor(currentType)})`;
+        btn.style.color = (['buy', 'sell_trade', 'sell_loot', 'cash_out'].includes(currentType)) ? '#000' : '#fff'; 
+        if(currentType === 'buy' || currentType === 'sell_trade' || currentType === 'cash_out' || currentType === 'convert') btn.style.color = '#000';
+
+        if(config.priceLabel && lblPrice) lblPrice.innerText = config.priceLabel;
+
+        sections.forEach(id => document.getElementById(id).style.display = 'none');
+
+        if (currentType === 'craft') document.getElementById('craftSection').style.display = 'block';
+        else if (currentType === 'convert') document.getElementById('convertSection').style.display = 'block';
+        else if (currentType === 'cash_out') document.getElementById('cashOutSection').style.display = 'block';
+        else {
+            document.getElementById('normalSection').style.display = 'block';
+            if (!config.needPrice) {
+                 priceInput.value = 0; priceInput.disabled = true;
+                 totalInput.value = 0; totalInput.disabled = true;
+            } else {
+                 priceInput.disabled = false;
+                 totalInput.disabled = false;
+            }
+        }
+    }
+
+    function getThemeColor(type) {
+        if(type.includes('buy')) return 'blue';
+        if(type.includes('sell_trade')) return 'green';
+        if(type.includes('sell_loot')) return 'purple';
+        if(type === 'use') return 'red';
+        if(type === 'craft') return 'orange';
+        if(type === 'convert') return 'convert';
+        if(type === 'cash_out') return 'cyan';
+        return 'gold';
+    }
+
+    function autoCalc(source) {
+        const elQty = document.getElementById('inQty');
+        const elTotal = document.getElementById('inTotal');
+        const elPrice = document.getElementById('inPrice');
+        let qty = parseFloat(elQty.value);
+        let total = parseFloat(elTotal.value);
+        let price = parseFloat(elPrice.value);
+        if (!qty) return;
+        if (source === 'total' && total) elPrice.value = (total / qty).toFixed(4);
+        else if (source === 'price' && price) elTotal.value = (price * qty).toFixed(2);
+        else if (source === 'qty' && price) elTotal.value = (price * qty).toFixed(2);
+    }
+
+    function autoCalcCash(source) {
+        const elQty = document.getElementById('cashQty');    
+        const elTotal = document.getElementById('cashTotal'); 
+        const elRatio = document.getElementById('cashRatio'); 
+        let qty = parseFloat(elQty.value);
+        let total = parseFloat(elTotal.value);
+        let ratio = parseFloat(elRatio.value);
+        if (source === 'total' && total && qty) elRatio.value = (qty / total).toFixed(4);
+        else if (source === 'ratio' && ratio && qty) elTotal.value = (qty / ratio).toFixed(0);
+        else if (source === 'qty' && ratio) elTotal.value = (qty / ratio).toFixed(0);
+    }
+
+    function submitTrade() {
+        if (currentType === 'craft') { submitCraft(); return; }
+        if (currentType === 'convert') { submitConvert(); return; }
+        if (currentType === 'cash_out') { submitCashOut(); return; }
+
+        const item = document.getElementById('inItem').value.trim();
+        let price = parseFloat(document.getElementById('inPrice').value);
+        const qty = parseInt(document.getElementById('inQty').value);
+
+        if (!item || isNaN(qty)) { alert("請填寫完整！"); return; }
+        if (isNaN(price)) price = 0;
+
+        const trade = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            type: currentType,
+            item: item, price: price, qty: qty
+        };
+        pushTrade(trade);
+        document.getElementById('inQty').value = '';
+        document.getElementById('inTotal').value = '';
+    }
+
+    function submitCraft() {
+        const srcItem = document.getElementById('srcItem').value.trim();
+        const srcQty = parseInt(document.getElementById('srcQty').value);
+        const tgtItem = document.getElementById('tgtItem').value.trim();
+        const tgtQty = parseInt(document.getElementById('tgtQty').value);
+        const fee = parseFloat(document.getElementById('craftFee').value) || 0;
+        if (!srcItem || !tgtItem) { alert("請填寫完整！"); return; }
+        const trade = {
+            id: Date.now(), date: new Date().toISOString(), type: 'craft',
+            item: srcItem, qty: srcQty, tgtItem: tgtItem, tgtQty: tgtQty, fee: fee
+        };
+        pushTrade(trade);
+        document.getElementById('srcQty').value = '';
+        document.getElementById('tgtQty').value = '';
+    }
+
+    // === 新增：庫存轉自用提交 ===
+    function submitConvert() {
+        const item = document.getElementById('cvItem').value.trim();
+        const qty = parseInt(document.getElementById('cvQty').value);
+
+        if (!item || !qty) { alert("請輸入物品和數量"); return; }
+        
+        // 檢查庫存 (從全域變數 currentInventoryState)
+        const currentInv = currentInventoryState[item];
+        if (!currentInv || currentInv.qty < qty) {
+            alert(`庫存不足！目前 ${item} 只有 ${currentInv ? currentInv.qty : 0} 個`);
+            return;
+        }
+
+        const trade = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            type: 'convert',
+            item: item,
+            qty: qty
+        };
+        pushTrade(trade);
+        document.getElementById('cvQty').value = '';
+    }
+
+    function submitCashOut() {
+        const qty = parseFloat(document.getElementById('cashQty').value);
+        const total = parseFloat(document.getElementById('cashTotal').value);
+        const ratio = parseFloat(document.getElementById('cashRatio').value);
+        if (!qty || !total) { alert("請填寫完整！"); return; }
+        const trade = {
+            id: Date.now(), date: new Date().toISOString(), type: 'cash_out',
+            item: '鑽石', qty: qty, total: total, ratio: ratio
+        };
+        pushTrade(trade);
+        document.getElementById('cashQty').value = '';
+        document.getElementById('cashTotal').value = '';
+    }
+
+    function pushTrade(trade) {
+        trades.unshift(trade);
+        saveData();
+        displayLimit = 20;
+        renderAll();
+    }
+
+    function calculateStats() {
+        let inventory = {}; 
+        let stats = { cashFlow: 0, tradeProfit: 0, lootIncome: 0, expense: 0, realCash: 0 };
+        
+        trades.slice().reverse().forEach(t => {
+            if (!inventory[t.item]) inventory[t.item] = { qty: 0, cost: 0 };
+            if (t.type === 'craft' && t.tgtItem && !inventory[t.tgtItem]) inventory[t.tgtItem] = { qty: 0, cost: 0 };
+
+            const inv = inventory[t.item];
+            const total = (t.price || 0) * (t.qty || 0);
+
+            switch(t.type) {
+                case 'buy': 
+                    stats.cashFlow -= total; inv.qty += t.qty; inv.cost += total; break;
+                case 'sell_trade': 
+                    const rev1 = total; 
+                    stats.cashFlow += rev1;
+                    let avg1 = inv.qty > 0 ? inv.cost / inv.qty : 0;
+                    const cogs1 = avg1 * t.qty;
+                    stats.tradeProfit += (rev1 - cogs1);
+                    inv.qty -= t.qty; inv.cost -= cogs1; break;
+                case 'sell_loot': 
+                    const rev2 = total; 
+                    stats.cashFlow += rev2; stats.lootIncome += rev2; break;
+                case 'use': 
+                    stats.cashFlow -= total; stats.expense += total; break;
+                case 'craft':
+                    let avgSrc = inv.qty > 0 ? inv.cost / inv.qty : 0;
+                    const matCost = avgSrc * t.qty;
+                    inv.qty -= t.qty; inv.cost -= matCost;
+                    const tgtInv = inventory[t.tgtItem];
+                    tgtInv.qty += t.tgtQty; tgtInv.cost += (matCost + t.fee);
+                    stats.cashFlow -= t.fee; break;
+                
+                // === 轉換邏輯 ===
+                case 'convert':
+                    let avgConv = inv.qty > 0 ? inv.cost / inv.qty : 0;
+                    const convCost = avgConv * t.qty;
+                    // 扣除庫存
+                    inv.qty -= t.qty; 
+                    inv.cost -= convCost;
+                    // 增加消費支出 (不影響現金流，因為錢早就付了)
+                    stats.expense += convCost;
+                    break;
+
+                case 'cash_out':
+                    stats.cashFlow -= t.qty; stats.realCash += t.total; break;
+            }
+        });
+        
+        // 更新全域庫存狀態，給UI檢查用
+        currentInventoryState = JSON.parse(JSON.stringify(inventory));
+        
+        return { stats, inventory };
+    }
+
+    function renderAll() {
+        const { stats, inventory } = calculateStats();
+        const fmt = (n) => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        
+        document.getElementById('dispRealMoney').innerText = "+" + fmt(stats.realCash);
+        document.getElementById('dispCashFlow').innerText = fmt(stats.cashFlow);
+        document.getElementById('dispCashFlow').style.color = stats.cashFlow >= 0 ? 'var(--text)' : 'var(--text)';
+        document.getElementById('dispTradeProfit').innerText = (stats.tradeProfit > 0 ? "+" : "") + fmt(stats.tradeProfit);
+        document.getElementById('dispLootIncome').innerText = "+" + fmt(stats.lootIncome);
+        document.getElementById('dispExpense').innerText = "-" + fmt(stats.expense);
+
+        const invBody = document.querySelector('#inventoryTable tbody');
+        invBody.innerHTML = '';
+        let hasInv = false;
+        for (const [name, data] of Object.entries(inventory)) {
+            if (data.qty > 0.01) {
+                hasInv = true;
+                const avg = data.cost / data.qty;
+                const breakEven = avg / (1 - TAX_RATE);
+                invBody.innerHTML += `
+                    <tr>
+                        <td style="color:var(--text); font-weight:500;">${name}</td>
+                        <td class="mono-num" style="color:var(--text); font-weight:bold;">${parseFloat(data.qty.toFixed(2))}</td>
+                        <td class="mono-num" style="color:var(--text-dim);">${avg.toFixed(3)}</td>
+                        <td class="mono-num break-even">${breakEven.toFixed(3)}</td>
+                    </tr>`;
+            }
+        }
+        if (!hasInv) invBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-dim); font-size:0.8em;">目前無庫存</td></tr>';
+        renderLedger();
+    }
+
+    function renderLedger() {
+        const list = document.getElementById('ledgerList');
+        const btnMore = document.getElementById('btnLoadMore');
+        list.innerHTML = '';
+        const visible = trades.slice(0, displayLimit);
+
+        visible.forEach(t => {
+            const total = (t.price || 0) * (t.qty || 0);
+            let dotClass = 'dot-buy', desc = '', val = '';
+
+            if (t.type === 'buy') { dotClass = 'dot-buy'; desc = '買入 ' + t.item; val = `-${total.toFixed(0)}`; }
+            else if (t.type === 'sell_trade') { dotClass = 'dot-sell'; desc = '賣貨 ' + t.item; val = `+${total.toFixed(0)}`; }
+            else if (t.type === 'sell_loot') { dotClass = 'dot-loot'; desc = '賣寶 ' + t.item; val = `+${total.toFixed(0)}`; }
+            else if (t.type === 'use') { dotClass = 'dot-use'; desc = '自用 ' + t.item; val = `-${total.toFixed(0)}`; }
+            else if (t.type === 'craft') { dotClass = 'dot-craft'; desc = `合成: ${t.item} > ${t.tgtItem}`; val = t.fee > 0 ? `-${t.fee}` : '-'; }
+            else if (t.type === 'convert') { dotClass = 'dot-convert'; desc = `轉自用: ${t.item}`; val = `-${t.qty}個`; }
+            else if (t.type === 'cash_out') { dotClass = 'dot-cash'; desc = `套現: ${t.qty} 鑽 (1:${t.ratio})`; val = `+NT$${t.total}`; }
+
+            const row = document.createElement('div');
+            row.className = 'log-row';
+            row.innerHTML = `
+                <div>${t.date.slice(5,16).replace('T',' ')}</div>
+                <div style="font-size:0.8em;">${t.type}</div>
+                <div><span class="tag-dot ${dotClass}"></span>${desc} <span style="color:#666">x${t.qty || t.tgtQty}</span></div>
+                <div class="mono-num" style="text-align:right;">${val}</div>
+                <div style="text-align:center;"><button onclick="delTrade(${t.id})" style="background:none; border:none; color:#444;">×</button></div>
+            `;
+            list.appendChild(row);
+        });
+        
+        btnMore.style.display = (trades.length > displayLimit) ? 'block' : 'none';
+    }
+
+    function loadMore() { displayLimit += 20; renderLedger(); }
+    function delTrade(id) { if(confirm("刪除此紀錄?")) { trades = trades.filter(t => t.id !== id); saveData(); renderAll(); } }
+    function saveData() { localStorage.setItem('rf_trade_data', JSON.stringify(trades)); }
+    function clearData() { if(confirm("確定清空所有資料？")) { localStorage.removeItem('rf_trade_data'); trades=[]; renderAll(); } }
+    
+    function exportData() {
+        const a = document.createElement('a');
+        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trades));
+        a.download = `RF_Backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+    
+    function importData(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const json = JSON.parse(e.target.result);
+                if(Array.isArray(json)) {
+                    if(confirm(`偵測到 ${json.length} 筆資料，確認還原？`)) {
+                        trades = json; saveData(); renderAll(); alert("還原成功");
+                    }
+                }
+            } catch(e) { alert("檔案錯誤"); }
+            input.value = '';
+        };
+        reader.readAsText(file);
+    }
+</script>
+</body>
+</html>
