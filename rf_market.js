@@ -1,4 +1,4 @@
-// === RF 市場情報局 核心引擎 v1.5 (量能分析版) ===
+// === RF 市場情報局 核心引擎 v1.7 (數據管理版) ===
 
 let marketData = JSON.parse(localStorage.getItem('rf_market_db')) || {};
 let currentItem = null; 
@@ -19,6 +19,47 @@ function initTimeInput() {
     document.getElementById('inTime').value = localISOTime;
 }
 
+// === 新增：數據管理功能 ===
+function exportData() {
+    const a = document.createElement('a');
+    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(marketData));
+    a.download = `RF_Market_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+}
+
+function importData(input) {
+    const file = input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const json = JSON.parse(e.target.result);
+            if(confirm(`偵測到備份檔案，這將會覆蓋目前的資料，確定還原？`)) {
+                marketData = json;
+                saveData();
+                renderItemList();
+                const keys = Object.keys(marketData);
+                if(keys.length > 0) selectItem(keys[0]);
+                alert("還原成功！");
+            }
+        } catch(e) { alert("檔案格式錯誤"); }
+        input.value = '';
+    };
+    reader.readAsText(file);
+}
+
+function clearAllData() {
+    if(confirm("🔥🔥🔥 警告：確定要清空所有追蹤資料嗎？此操作無法復原！")) {
+        localStorage.removeItem('rf_market_db');
+        marketData = {};
+        renderItemList();
+        document.getElementById('priceChart').innerHTML = ''; // 清空圖表
+        document.getElementById('historyBody').innerHTML = ''; // 清空歷史
+        alert("資料已清空");
+    }
+}
+
+// === 原有功能 ===
 function addData() {
     const name = document.getElementById('inName').value.trim();
     const low = parseFloat(document.getElementById('inLowPrice').value);
@@ -151,7 +192,7 @@ function renderHistoryTable(name) {
             <td>${r.avg}</td>
             <td style="color:var(--blue);">${r.last || '-'}</td>
             <td>${r.qty || '-'}</td>
-            <td><button class="del-btn" onclick="delHistoryRecord('${name}', ${realIndex})">×</button></td>
+            <td><button class="del-btn" onclick="delHistoryRecord('${name}', ${realIndex})" title="刪除此筆">×</button></td>
         `;
         tbody.appendChild(row);
     });
@@ -185,38 +226,26 @@ function analyzeData(name) {
     else if(discount > 0) { statusText = "✅ 價格合理"; statusColor = "#58a6ff"; } 
     else { statusText = "⛔ 價格過高"; statusColor = "#ff5252"; }
 
-    // === 新增：量能分析邏輯 ===
     let volStatus = `${latest.qty} (持平)`;
     let volColor = "#888";
     
     if(records.length >= 2) {
         const prev = records[records.length - 2];
         const volDiff = latest.qty - prev.qty;
-        
-        // 設定閾值：變化超過 5% 才算有動靜
         if (prev.qty > 0 && Math.abs(volDiff) / prev.qty > 0.05) {
-            if (volDiff > 0) {
-                volStatus = `賣壓湧現 (↑${volDiff})`;
-                volColor = "#ff5252"; // 紅色警戒
-            } else {
-                volStatus = `籌碼消化 (↓${Math.abs(volDiff)})`;
-                volColor = "#2ea043"; // 綠色利多
-            }
-        } else if (volDiff !== 0) {
-            volStatus = `${latest.qty} (${volDiff > 0 ? '+' : ''}${volDiff})`;
-        }
+            if (volDiff > 0) { volStatus = `賣壓湧現 (↑${volDiff})`; volColor = "#ff5252"; } 
+            else { volStatus = `籌碼消化 (↓${Math.abs(volDiff)})`; volColor = "#2ea043"; }
+        } else if (volDiff !== 0) { volStatus = `${latest.qty} (${volDiff > 0 ? '+' : ''}${volDiff})`; }
     }
 
     document.getElementById('dispCurrent').innerText = latest.low;
     document.getElementById('dispAvg').innerText = latest.avg;
     
     const elVol = document.getElementById('dispVolStatus');
-    elVol.innerText = volStatus;
-    elVol.style.color = volColor;
+    elVol.innerText = volStatus; elVol.style.color = volColor;
 
     const elStat = document.getElementById('dispStatus');
-    elStat.innerText = statusText;
-    elStat.style.color = statusColor;
+    elStat.innerText = statusText; elStat.style.color = statusColor;
 }
 
 function setTimeRange(minutes) {

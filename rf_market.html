@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RF 市場情報(鎖定)</title>
+    <title>RF 市場情報局 v1.8 (安全修復版)</title>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         :root {
@@ -18,9 +18,9 @@
         *::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
         *::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
-        body { background: var(--bg); color: var(--text); font-family: "Microsoft JhengHei", sans-serif; margin: 0; padding: 20px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { background: var(--bg); color: var(--text); font-family: "Microsoft JhengHei", sans-serif; margin: 0; padding: 20px; height: 100vh; overflow: hidden; }
         
-        /* === 鎖定畫面樣式 (新增) === */
+        /* === 鎖定畫面 === */
         #loginOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--bg); z-index: 9999;
@@ -43,10 +43,40 @@
         }
         .login-btn:hover { filter: brightness(1.1); }
 
-        /* 原有樣式 */
-        .container { display: flex; gap: 20px; height: 100%; }
-        .sidebar { width: 320px; background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 8px; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
-        .main-view { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; overflow-y: auto; padding-right: 5px; }
+        /* === 版面配置 (修復重點) === */
+        .container { 
+            display: flex; 
+            flex-direction: column; /* 關鍵修正：由上而下排列 */
+            gap: 20px; 
+            height: 100%; 
+            overflow: hidden; 
+        }
+        
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding-bottom: 10px; border-bottom: 1px solid var(--border); 
+            flex-shrink: 0; /* 防止標題被壓縮 */
+        }
+        .header h1 { margin: 0; font-size: 1.4em; color: var(--gold); letter-spacing: 1px; }
+        .tools button { background: none; border: 1px solid var(--border); color: var(--text-muted); font-size: 0.8em; cursor: pointer; margin-left: 10px; padding: 5px 10px; border-radius: 4px; transition: 0.2s; }
+        .tools button:hover { border-color: var(--text); color: var(--text); }
+        #importFile { display: none; }
+
+        /* 內容區塊 */
+        .content-wrapper {
+            display: flex; gap: 20px; 
+            flex: 1; /* 佔滿剩餘高度 */
+            min-height: 0; /* 防止 flex 子元素溢出 */
+        }
+
+        .sidebar { 
+            width: 320px; background: var(--panel); border: 1px solid var(--border); 
+            padding: 20px; border-radius: 8px; 
+            display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; 
+        }
+        .main-view { 
+            flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; overflow-y: auto; padding-right: 5px; 
+        }
 
         h2 { margin: 0 0 15px 0; font-size: 1.1em; color: var(--gold); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
         .input-group { margin-bottom: 15px; }
@@ -81,8 +111,8 @@
         .history-table th { text-align: left; color: var(--text-muted); padding: 8px; border-bottom: 1px solid var(--border); }
         .history-table td { padding: 8px; border-bottom: 1px solid #2a2624; color: var(--text); }
         .history-table tr:hover { background: rgba(255,255,255,0.02); }
-        .del-btn { background: none; border: none; color: #666; cursor: pointer; }
-        .del-btn:hover { color: var(--red); }
+        .del-btn { background: none; border: 1px solid #444; color: #888; cursor: pointer; border-radius: 4px; padding: 2px 8px; transition: 0.2s; }
+        .del-btn:hover { color: #fff; background: var(--red); border-color: var(--red); }
 
         .time-toolbar { display: flex; gap: 5px; background: #0d1117; padding: 5px; border-radius: 6px; border: 1px solid var(--border); }
         .time-btn { 
@@ -139,66 +169,78 @@
 </div>
 
 <div class="container">
-    <div class="sidebar">
-        <h2>📝 市場情報錄入</h2>
-        
-        <div class="input-group">
-            <label style="color:var(--blue)">紀錄時間</label>
-            <input type="datetime-local" id="inTime">
+    <div class="header">
+        <h1>RF 市場情報局 <span>v1.8</span></h1>
+        <div class="tools">
+            <button onclick="exportData()">備份 (Save)</button>
+            <button onclick="document.getElementById('importFile').click()">還原 (Load)</button>
+            <button onclick="clearAllData()" style="color:var(--red); border-color:var(--red);">🔥 全部清空</button>
+            <input type="file" id="importFile" accept=".json" onchange="importData(this)">
         </div>
-
-        <div class="input-group"><label>物品名稱</label><input list="itemList" id="inName" placeholder="搜尋或輸入..."><datalist id="itemList"></datalist></div>
-        
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div class="input-group"><label style="color:var(--gold)">最低登錄價</label><input type="number" id="inLowPrice" step="0.001"></div>
-            <div class="input-group"><label style="color:var(--green)">每週平均價</label><input type="number" id="inAvgPrice" step="0.001"></div>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; opacity: 0.9;">
-            <div class="input-group"><label>最後成交</label><input type="number" id="inLastPrice" step="0.001"></div>
-            <div class="input-group"><label style="color:var(--text)">登錄數量 (賣壓)</label><input type="number" id="inQty"></div>
-        </div>
-
-        <button class="btn btn-add" onclick="addData()">📸 記錄單筆</button>
-        <button class="btn btn-import" onclick="openImport()">📥 批量貼上</button>
-        <button class="btn" style="background:#21262d; color:#8b949e; border:1px solid #30363d;" onclick="clearInputs()">清除</button>
-
-        <h2 style="margin-top:20px;">📂 追蹤清單</h2>
-        <div id="trackedItems" class="item-list"></div>
     </div>
 
-    <div class="main-view">
-        <div class="stats-panel">
-            <div class="stat-card"><div class="stat-label">目前最低</div><div class="stat-val" style="color:var(--gold)" id="dispCurrent">--</div></div>
-            <div class="stat-card"><div class="stat-label">週平均線</div><div class="stat-val" style="color:var(--green)" id="dispAvg">--</div></div>
-            <div class="stat-card"><div class="stat-label">賣壓監控 (數量)</div><div class="stat-val" id="dispVolStatus" style="font-size:1.1em;">--</div></div>
-            <div class="stat-card"><div class="stat-label">市場狀態</div><div class="stat-val" id="dispStatus" style="font-size:1.1em;">--</div></div>
-        </div>
-
-        <div class="chart-panel">
-            <div class="chart-header">
-                <div style="font-weight:bold; color:#fff;" id="chartTitle">趨勢圖表</div>
-                <div class="time-toolbar">
-                    <button class="time-btn" onclick="setTimeRange(10)">10分</button>
-                    <button class="time-btn" onclick="setTimeRange(30)">30分</button>
-                    <button class="time-btn" onclick="setTimeRange(60)">1H</button>
-                    <button class="time-btn" onclick="setTimeRange(180)">3H</button>
-                    <button class="time-btn" onclick="setTimeRange(1440)">1天</button>
-                    <button class="time-btn" onclick="setTimeRange(10080)">1週</button>
-                    <button class="time-btn active" onclick="setTimeRange(0)" id="btnAll">全部</button>
-                </div>
-            </div>
+    <div class="content-wrapper">
+        <div class="sidebar">
+            <h2>📝 市場情報錄入</h2>
             
-            <div id="dataWarning" class="data-warning">⚠️ 資料不足</div>
-            <div id="priceChart" style="flex:1;"></div>
+            <div class="input-group">
+                <label style="color:var(--blue)">紀錄時間</label>
+                <input type="datetime-local" id="inTime">
+            </div>
+
+            <div class="input-group"><label>物品名稱</label><input list="itemList" id="inName" placeholder="搜尋或輸入..."><datalist id="itemList"></datalist></div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div class="input-group"><label style="color:var(--gold)">最低登錄價</label><input type="number" id="inLowPrice" step="0.001"></div>
+                <div class="input-group"><label style="color:var(--green)">每週平均價</label><input type="number" id="inAvgPrice" step="0.001"></div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; opacity: 0.9;">
+                <div class="input-group"><label>最後成交</label><input type="number" id="inLastPrice" step="0.001"></div>
+                <div class="input-group"><label style="color:var(--text)">登錄數量 (賣壓)</label><input type="number" id="inQty"></div>
+            </div>
+
+            <button class="btn btn-add" onclick="addData()">📸 記錄單筆</button>
+            <button class="btn btn-import" onclick="openImport()">📥 批量貼上</button>
+            <button class="btn" style="background:#21262d; color:#8b949e; border:1px solid #30363d;" onclick="clearInputs()">清除輸入框</button>
+
+            <h2 style="margin-top:20px;">📂 追蹤清單</h2>
+            <div id="trackedItems" class="item-list"></div>
         </div>
 
-        <div class="history-panel">
-            <h2 style="font-size:1em; border-bottom:none; margin-bottom:10px;">📜 詳細歷史紀錄</h2>
-            <div style="max-height: 250px; overflow-y: auto;">
-                <table class="history-table">
-                    <thead><tr><th>時間</th><th>最低價</th><th>均價</th><th>成交</th><th>數量</th><th>操作</th></tr></thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
+        <div class="main-view">
+            <div class="stats-panel">
+                <div class="stat-card"><div class="stat-label">目前最低</div><div class="stat-val" style="color:var(--gold)" id="dispCurrent">--</div></div>
+                <div class="stat-card"><div class="stat-label">週平均線</div><div class="stat-val" style="color:var(--green)" id="dispAvg">--</div></div>
+                <div class="stat-card"><div class="stat-label">賣壓監控 (數量)</div><div class="stat-val" id="dispVolStatus" style="font-size:1.1em;">--</div></div>
+                <div class="stat-card"><div class="stat-label">市場狀態</div><div class="stat-val" id="dispStatus" style="font-size:1.1em;">--</div></div>
+            </div>
+
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <div style="font-weight:bold; color:#fff;" id="chartTitle">趨勢圖表</div>
+                    <div class="time-toolbar">
+                        <button class="time-btn" onclick="setTimeRange(10)">10分</button>
+                        <button class="time-btn" onclick="setTimeRange(30)">30分</button>
+                        <button class="time-btn" onclick="setTimeRange(60)">1H</button>
+                        <button class="time-btn" onclick="setTimeRange(180)">3H</button>
+                        <button class="time-btn" onclick="setTimeRange(1440)">1天</button>
+                        <button class="time-btn" onclick="setTimeRange(10080)">1週</button>
+                        <button class="time-btn active" onclick="setTimeRange(0)" id="btnAll">全部</button>
+                    </div>
+                </div>
+                
+                <div id="dataWarning" class="data-warning">⚠️ 資料不足</div>
+                <div id="priceChart" style="flex:1;"></div>
+            </div>
+
+            <div class="history-panel">
+                <h2 style="font-size:1em; border-bottom:none; margin-bottom:10px;">📜 詳細歷史紀錄 (可單筆刪除)</h2>
+                <div style="max-height: 250px; overflow-y: auto;">
+                    <table class="history-table">
+                        <thead><tr><th>時間</th><th>最低價</th><th>均價</th><th>成交</th><th>數量</th><th>操作</th></tr></thead>
+                        <tbody id="historyBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -207,25 +249,10 @@
 <script src="rf_market.js"></script>
 
 <script>
-    const PASSWORD = "0000"; // 預設密碼
-    
-    function checkPass() { 
-        if(document.getElementById('passInput').value === PASSWORD) { 
-            document.getElementById('loginOverlay').style.display = 'none'; 
-        } else { 
-            alert("密碼錯誤"); 
-            document.getElementById('passInput').value = ""; 
-            document.getElementById('passInput').focus(); 
-        } 
-    }
-    
+    const PASSWORD = "0000"; 
+    function checkPass() { if(document.getElementById('passInput').value === PASSWORD) { document.getElementById('loginOverlay').style.display = 'none'; } else { alert("密碼錯誤"); document.getElementById('passInput').value = ""; document.getElementById('passInput').focus(); } }
     function checkEnter(e) { if(e.key === "Enter") checkPass(); }
-    
-    // 頁面載入後自動聚焦密碼框
-    document.addEventListener('DOMContentLoaded', function() {
-        const passInput = document.getElementById('passInput');
-        if(passInput) passInput.focus();
-    });
+    document.addEventListener('DOMContentLoaded', function() { document.getElementById('passInput').focus(); });
 </script>
 </body>
 </html>
